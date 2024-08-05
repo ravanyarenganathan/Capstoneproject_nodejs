@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Exercise Tracker | freeCodeCamp</title>
+  <link rel="shortcut icon" href="https://cdn.freecodecamp.org/universal/favicons/favicon.ico" type="image/x-icon" />
+  <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+  <link href="style.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  <div class="container">
+    <h1>Exercise tracker</h1>
+    <form id="createUserForm" method="post">
+      <h2>Create a New User</h2>
+      <p><code>POST /api/users</code></p>
+      <input id="username" type="text" name="username" placeholder="username" required />
+      <input type="submit" value="Submit" />
+    </form>
+    <form id="addExerciseForm" method="post">
+      <h2>Add exercises</h2>
+      <p><code>POST /api/users/:_id/exercises</code></p>
+      <input id="userId" type="text" name="_id" placeholder="User ID" required />
+      <input id="description" type="text" name="description" placeholder="description*" required />
+      <input id="duration" type="number" name="duration" placeholder="duration* (mins.)" required />
+      <input id="date" type="text" name="date" placeholder="date (yyyy-mm-dd)" />
+      <input type="submit" value="Submit" />
+    </form>
+    <div id="usersList">
+      <h2>Users List</h2>
+      <p><code>GET /api/users</code></p>
+      <ul id="users"></ul>
+    </div>
+    <div id="exerciseLog">
+      <h2>Exercise Log</h2>
+      <p><code>GET /api/users/:_id/logs</code></p>
+      <form>
+        <input type="text" id="logUserId" name="logUserId" placeholder="User ID" required>
+        <input type="text" id="fromDate" name="fromDate" placeholder="From (YYYY-MM-DD):" required>
+        <input type="text" id="toDate" name="toDate" placeholder="To (YYYY-MM-DD):">
+        <input type="number" id="logLimit" name="logLimit" placeholder="Limit:" required>
+        <input id="fetchExerciseLogButton" type="submit" value="Submit" />
+      </form>
+      <h2>Exercise Log:</h2>
+      <p id="exerciseLogCount"></p>
+      <ul id="exerciseLogList"></ul>
+
+    </div>
+  </div>
+
+  <script>
+    const createUserForm = document.getElementById("createUserForm");
+    const addExerciseForm = document.getElementById("addExerciseForm");
+    const usersList = document.getElementById("users");
+    const exerciseLogList = document.getElementById("exerciseLogList");
+    const fetchExerciseLogButton = document.getElementById("fetchExerciseLogButton");
+    const fromDate = document.getElementById('fromDate');
+    const toDate = document.getElementById('toDate');
+    const logLimit = document.getElementById('logLimit');
+    const logUserId = document.getElementById('logUserId');
+    const exerciseLogCount = document.getElementById("exerciseLogCount");
+
+    // Event listener for creating a new user
+    createUserForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const username = document.getElementById("username").value.trim();
+      try {
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username })
+        });
+        const userData = await response.json();
+        alert(`New user created with ID: ${userData.id}`);
+        createUserForm.reset();
+      } catch (error) {
+        console.error('Error creating user:', error);
+      }
+    });
+
+    // Event listener for adding an exercise
+    addExerciseForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const userId = document.getElementById("userId").value;
+      const description = document.getElementById("description").value;
+      const duration = document.getElementById("duration").value;
+      const date = document.getElementById("date").value;
+
+      try {
+        const response = await fetch(`/api/users/${userId}/exercises`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ description, duration, date })
+        });
+        const exerciseData = await response.json();
+        alert(`Exercise added for user ${exerciseData.userId}`);
+        addExerciseForm.reset();
+      } catch (error) {
+        console.error('Error adding exercise:', error);
+      }
+    });
+
+    // Function to fetch and display all users
+    async function fetchUsers() {
+      try {
+        const response = await fetch('/api/users');
+        const users = await response.json();
+        usersList.innerHTML = '';
+        users.forEach(user => {
+          const li = document.createElement('li');
+          li.textContent = `${user.username} (ID: ${user._id})`;
+          usersList.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    }
+
+
+
+    // Event listener for fetching exercise log
+    if (fetchExerciseLogButton) {
+      fetchExerciseLogButton.addEventListener('click', async () => {
+        const userId = logUserId.value.trim();
+        if (!userId) return;
+
+        // Query parameters
+        // const from = document.getElementById('fromDate').value.trim();
+        // const to = document.getElementById('toDate').value.trim();
+        // const limit = document.getElementById('logLimit').value.trim();
+        let url = `/api/users/${userId}/logs`;
+        const from = fromDate.value.trim();
+        const to = toDate.value.trim();
+        const limit = logLimit.value.trim();
+
+
+        if (from && to) {
+          url += `?from=${from}&to=${to}`;
+          if (limit) {
+            url += `&limit=${limit}`;
+          }
+        } else if (limit) {
+          url += `?limit=${limit}`;
+        }
+
+        try {
+          const response = await fetch(url);
+          const exerciseLog = await response.json();
+
+          exerciseLogList.innerHTML = ''; // Clear previous log
+          if (typeof exerciseLog.log === 'string') {
+            // Display message if no exercises found
+            const li = document.createElement('li');
+            li.textContent = exerciseLog.log;
+            exerciseLogList.appendChild(li);
+            exerciseLogCount.textContent = '';
+          } else {
+            exerciseLog.log.forEach(log => {
+              const li = document.createElement('li');
+              li.textContent = `Exercise: ${log.description}, Duration: ${log.duration}, Date: ${log.date}`;
+              exerciseLogList.appendChild(li);
+            });
+            exerciseLogCount.textContent = `Total Exercises: ${exerciseLog.count}`;
+          }
+        } catch (error) {
+          console.error('Error fetching exercise log:', error);
+          exerciseLogList.innerHTML = '<li>Error fetching exercise log</li>';
+          exerciseLogCount.textContent = '';
+        }
+      })
+    } else {
+      console.error('fetchExerciseLogButton not found');
+    }
+    // Initial fetch of users
+    fetchUsers();
+
+  </script>
+</body>
+
+</html>
