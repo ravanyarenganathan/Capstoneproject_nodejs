@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Exercise Tracker | freeCodeCamp</title>
+        <link rel="shortcut icon" href="https://cdn.freecodecamp.org/universal/favicons/favicon.ico" type="image/x-icon" />
+        <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+        <link href="style.css" rel="stylesheet" type="text/css" />
+      </head>
+<body>
+    <div class="container">
+    <div>
+    <form id="userForm">
+    <h3>Create a New User</h3>
+    <label for="username">Username:</label>
+    <input type="text" id="username" name="username">
+    <button type="submit">Create User</button>
+</form>
+<form id="getUserForm">
+    <h3>Get All Users</h3>
+    <button type="button" id="getAllUsers">Get All Users</button>
+</form>
+</div>
+
+<form id="exerciseForm">
+    <h3>Create Exercise for User</h3>
+    <label for="userId">User ID:</label>
+    <input type="number" id="userId" name="userId" ><br>
+
+    <label for="description">Description:</label>
+    <input type="text" id="description" name="description" ><br>
+
+    <label for="duration">Duration:</label>
+    <input type="number" id="duration" name="duration" ><br>
+
+    <label for="date">Date:</label>
+    <input type="date" id="date" name="date"><br>
+
+    <button type="submit">Add Exercise</button>
+</form>
+<form id="fetchLogsForm">
+    <h3>Get Exercise Logs</h3>
+    <label for="userLogId">User ID:</label>
+    <input type="number" id="userLogId" name="userLogId" ><br>
+    <button type="submit">Get Exercise Logs</button>
+</form>
+<form id="logsForm">
+    <h3>Fetch logs</h3>
+    <label for="userlimitId">User ID:</label>
+    <input type="text" id="userlimitId" name="userlimitId" required><br><br>
+
+    <label for="fromDate">From Date (YYYY-MM-DD)  (optional):</label>
+    <input type="date" id="fromDate" name="fromDate"><br><br>
+
+    <label for="toDate">To Date (YYYY-MM-DD)  (optional):</label>
+    <input type="date" id="toDate" name="toDate"><br><br>
+
+    <label for="limit">Limit  (optional):</label>
+    <input type="number" id="limit" name="limit"><br><br>
+
+    <button type="submit">Fetch Logs</button>
+</form>
+</div>
+
+<script>
+    document.getElementById('logsForm').addEventListener('submit', async (event)=>{
+        event.preventDefault();
+        const userId = document.getElementById('userlimitId').value;
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        const limit = document.getElementById('limit').value;
+        
+        let url = `/api/users/${userId}/logs`;
+         const queryParams = [];
+         if (fromDate) queryParams.push(`from=${fromDate}`);
+         if (toDate) queryParams.push(`to=${toDate}`);
+         if (limit) queryParams.push(`limit=${limit}`);
+         if (queryParams.length > 0) {
+             url += `?${queryParams.join('&')}`;
+         }
+
+         window.location.href = url;
+    })
+
+
+
+
+
+    document.getElementById('fetchLogsForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const userId = document.getElementById('userLogId').value;
+        window.location.href = `/api/users/${userId}/logs`;
+    });
+    document.getElementById('exerciseForm').addEventListener('submit', async (event) => {
+        event.preventDefault(); 
+        const userId = document.getElementById('userId').value;
+        const description = document.getElementById('description').value;
+        const duration = document.getElementById('duration').value;
+        const date = document.getElementById('date').value;
+
+        try {
+            const response = await fetch(`/api/users/${userId}/exercises`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description, duration, date }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                window.location.href = `/users/${userId}/exercises/${data._id}`;
+            } else {
+                const errorData = await response.json();
+                document.getElementById('response').innerHTML = `<p style="color:red;">${errorData.error || 'Unexpected error'}</p>`;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+
+    document.getElementById('userForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('username').value;
+
+        try {
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username }), 
+            });
+
+            const responseDiv = document.getElementById('response');
+
+            if (response.ok) {
+                const data = await response.json();
+                window.location.href = `/api/users/${data.id}`;
+            } else if (response.status === 404) {
+                window.location.href = `/error/user-exists?${username}`;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+
+    document.getElementById('getAllUsers').addEventListener('click', () => {
+        window.location.href = '/all-users';
+    });
+
+    
+</script>
+
+</body>
+</html>
