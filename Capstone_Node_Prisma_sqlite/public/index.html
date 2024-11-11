@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Exercise Tracker | freeCodeCamp</title>
+        <link rel="shortcut icon" href="https://cdn.freecodecamp.org/universal/favicons/favicon.ico" type="image/x-icon" />
+        <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet" type="text/css" />
+        <link href="style.css" rel="stylesheet" type="text/css" />
+      </head>
+<body>
+    <h1>Excersice tracker</h1>
+    <div class="container">
+    <form id="userForm">
+    <h2>Create a New User</h2>
+    <p><code>POST /api/users</code></p>
+    <input id="uname" type="text" name="username" placeholder="username" />
+    <input type="submit" value="Submit" />
+</form>
+<form action="/api/users/:_id/exercises" id="exercise-form" method="post">
+    <h2>Add exercises</h2>
+    <p><code>POST /api/users/:_id/exercises</code></p>
+    <input id="uid" type="text" name=":_id" placeholder=":_id" />
+    <input id="desc" type="text" name="description" placeholder="description*" />
+    <input id="dur" type="text" name="duration" placeholder="duration* (mins.)" />
+    <input id="date" type="text" name="date" placeholder="date (yyyy-mm-dd)" />
+    <input type="submit" value="Submit" />
+</form>
+<p>
+    <strong>GET user's exercise log: </strong>
+    <code>GET /api/users/:_id/logs?[from][&amp;to][&amp;limit]</code>
+  </p>
+  <p><strong>[ ]</strong> = optional</p>
+  <p><strong>from, to</strong> = dates (yyyy-mm-dd); <strong>limit</strong> = number
+</p>
+<form id="getUserForm">
+    <h2>Get All Users</h2>
+    <button type="button" id="getAllUsers">Get All Users</button>
+</form>
+<form id="fetchLogsForm">
+    <h2>Get Exercise Logs</h2>
+    <input type="number" id="userLogId" name="userLogId" placeholder=":_id" ><br>
+    <button type="submit">Get Exercise Logs</button>
+</form>
+<form id="logsForm">
+    <h2>Fetch logs</h2>
+    <!-- <label for="userlimitId">User ID:</label> -->
+    <input type="text" id="userlimitId" name="userlimitId" placeholder=":_id" required><br><br>
+
+    <!-- <label for="fromDate">From Date (YYYY-MM-DD)  (optional):</label> -->
+    <input type="date" id="fromDate" name="fromDate" placeholder="fromDate"><br><br>
+
+    <!-- <label for="toDate">To Date (YYYY-MM-DD)  (optional):</label> -->
+    <input type="date" id="toDate" name="toDate" placeholder="toDate"><br><br>
+
+    <!-- <label for="limit">Limit  (optional):</label> -->
+    <input type="number" id="limit" name="limit" placeholder="limit"><br><br>
+    <input type="submit" value="Submit" />
+    <!-- <button type="submit">Fetch Logs</button> -->
+</form>
+</div>
+
+<script>
+    document.getElementById('logsForm').addEventListener('submit', async (event)=>{
+        event.preventDefault();
+        const userId = document.getElementById('userlimitId').value;
+        const fromDate = document.getElementById('fromDate').value;
+        const toDate = document.getElementById('toDate').value;
+        const limit = document.getElementById('limit').value;
+        
+        let url = `/api/users/${userId}/logs`;
+         const queryParams = [];
+         if (fromDate) queryParams.push(`from=${fromDate}`);
+         if (toDate) queryParams.push(`to=${toDate}`);
+         if (limit) queryParams.push(`limit=${limit}`);
+         if (queryParams.length > 0) {
+             url += `?${queryParams.join('&')}`;
+         }
+
+         window.location.href = url;
+    })
+
+
+
+
+
+    document.getElementById('fetchLogsForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const userId = document.getElementById('userLogId').value;
+        window.location.href = `/api/users/${userId}/logs`;
+    });
+    document.getElementById('exercise-form').addEventListener('submit', async (event) => {
+        event.preventDefault(); 
+        const userId = document.getElementById('uid').value;
+        const description = document.getElementById('desc').value;
+        const duration = document.getElementById('dur').value;
+        const date = document.getElementById('date').value;
+
+        try {
+            const response = await fetch(`/api/users/${userId}/exercises`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description, duration, date }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                window.location.href = `/users/${userId}/exercises/${data._id}`;
+            } else {
+                const errorData = await response.json();
+                document.getElementById('response').innerHTML = `<p style="color:red;">${errorData.error || 'Unexpected error'}</p>`;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+
+    document.getElementById('userForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const username = document.getElementById('uname').value;
+
+        try {
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username }), 
+            });
+
+            const responseDiv = document.getElementById('response');
+
+            if (response.ok) {
+                const data = await response.json();
+                window.location.href = `/api/users/${data.id}`;
+            } else if (response.status === 404) {
+                window.location.href = `/error/user-exists?${username}`;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    });
+
+    document.getElementById('getAllUsers').addEventListener('click', () => {
+        window.location.href = '/all-users';
+    });
+
+    
+</script>
+
+</body>
+</html>
