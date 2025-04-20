@@ -1,0 +1,19 @@
+{
+  "name": "capstone_node_prisma_sqlite",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start":"node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.19.1",
+    "body-parser": "^1.20.3",
+    "express": "^4.21.0",
+    "prisma": "^5.19.1"
+  }
+}
