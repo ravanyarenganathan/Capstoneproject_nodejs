@@ -13,6 +13,12 @@ const addExercise = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { id: parseInt(_id) } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    if (isNaN(duration) || parseInt(duration, 10) <= 0) {
+      return res.status(400).json({ error: "Invalid duration value, expecting a positive number" });
+    }
+    if (date && isNaN(Date.parse(date))) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
     const exercise = await prisma.exercise.create({
       data: {
         userId: user.id,
@@ -40,14 +46,29 @@ const getUserLogs = async (req, res) => {
     const { _id } = req.params;
     const { from, to, limit } = req.query;
 
+    _id = parseInt(_id, 10);
+    if (isNaN(_id)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
     const user = await prisma.user.findUnique({ where: { id: parseInt(_id) } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     const filters = { userId: user.id };
     if (from || to) {
       filters.date = {};
-      if (from) filters.date.gte = new Date(from);
-      if (to) filters.date.lte = new Date(to);
+      if (from){
+        if (isNaN(Date.parse(from))) {
+          return res.status(400).json({ error: "Invalid 'from' date format" });
+        }
+        filters.date.gte = new Date(from); 
+      } 
+      if (to) {
+        if (isNaN(Date.parse(to))) {
+          return res.status(400).json({ error: "Invalid 'to' date format" });
+        }
+        filters.date.lte = new Date(to);
+      }
     }
 
     const parsedLimit = limit ? parseInt(limit) : undefined;
