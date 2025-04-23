@@ -43,7 +43,7 @@ const addExercise = async (req, res) => {
 
 const getUserLogs = async (req, res) => {
   try {
-    const { _id } = req.params;
+    let { _id } = req.params;
     const { from, to, limit } = req.query;
 
     _id = parseInt(_id, 10);
